@@ -1,4 +1,4 @@
-#ifndef MAINWIDGET_H
+﻿#ifndef MAINWIDGET_H
 #define MAINWIDGET_H
 
 #include <QWidget>
@@ -27,7 +27,7 @@ private:
 
     QString fileName;
 
-    XMLReadWrite xmlRW;
+    XMLReadWrite* xmlRW;
 };
 
 #endif // MAINWIDGET_H

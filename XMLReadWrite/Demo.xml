@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Demo>
+    <LogName>当年明月</LogName>
+    <LogPwd>123456</LogPwd>
+    <UserInfo>
+        <UserName>张三</UserName>
+        <UserSex>男</UserSex>
+        <UserAge>18</UserAge>
+		<UserAddress>齐齐哈尔</UserAddress>
+    </UserInfo>
+</Demo>
