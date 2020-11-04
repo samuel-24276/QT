@@ -18,10 +18,10 @@ void MainWidget::on_OpenBtn_clicked()
 {
     fileName = QFileDialog::getOpenFileName();
     xmlRW = new XMLReadWrite(this, fileName);
-    QString writeName = fileName.split(".")[0] + "Write.xml";
-    xmlRW->write(writeName);
+//    QString writeName = fileName.split(".")[0] + "Write.xml";
+//    xmlRW->write(writeName);
     ui->lineEdit->setText(fileName);
-    QVector<QString> vecInfo = xmlRW->read();
+//    QVector<QString> vecInfo = xmlRW->read();
 //    qDebug()<<vecInfo;
 //    UserInfo info = xmlRW->toUserInfo();
 //    ui->plainTextEdit->appendPlainText(info.LogName);
@@ -42,18 +42,20 @@ void MainWidget::on_OpenBtn_clicked()
     p.first = "day";
     p.second = "04";
     attrs.append(p);
-    xmlRW->addNode("DateInfo", "2020.11.13", attrs);                               //增
-    if(xmlRW->delNode("DateInfo"))                      //删
+    xmlRW->addNode("Date", "2020.11.24", attrs);                               //增
+    if(xmlRW->delNode("UserSex"))                      //删
         qDebug()<<"del success";
     else
         qDebug()<<"del failed";
-    if(xmlRW->updateNode("UserAge", "28"))            //改
+    if(xmlRW->updateNode("Email", "sdakjfa@163.com"))            //改
         qDebug()<<"update success";
     else
         qDebug()<<"update failed";
-    QDomNode node = xmlRW->findNode("UserSex");//查，通过节点名称查询该节点，返回该节点副本，可以通过副本查询节点属性，节点值
+//    QDomNode node = xmlRW->findNode("UserSex");//查，通过节点名称查询该节点，返回该节点副本，可以通过副本查询节点属性，节点值
+      QDomNode node = xmlRW->findNode("Email");
     if(!node.isNull())
-        qDebug()<<"find success"<<node.nodeName()<<node.firstChild().nodeValue();
+        qDebug()<<"find success"<<node.nodeName()<<node.firstChild().nodeValue()<<node.toElement().text()<<node.toElement().attribute("e1");
     else
         qDebug()<<"find failed";
+
 }

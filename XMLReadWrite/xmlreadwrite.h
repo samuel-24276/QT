@@ -35,21 +35,28 @@ public:
 
     void write(QString fileName);
 
-    void addNode(QString nodeName, QString nodeValue, QVector<QPair<QString, QString> >& attrs);          //在root节点最后新增节点，第三参数存储属性名及属性值
+    bool addNode(QString nodeName, QString nodeValue, QVector<QPair<QString, QString> >& attrs);          //在root节点最后新增节点，第三参数存储属性名及属性值
 
-//    void addNodeBefore(QString nodeName, QString nodeValue, QString refNodeName);
+//    bool addNodeBefore(QString nodeName, QString nodeValue, QString refNodeName);
 
-//    void addNodeAfter(QString nodeName, QString nodeValue, QString refNodeName);
+//    bool addNodeAfter(QString nodeName, QString nodeValue, QString refNodeName);
 
     bool delNode(QString nodeName);//通过节点名称删除该节点
 
     bool updateNode(QString oldNodeName, QString newValue);//修改节点名称为oldNodeName的节点值
 
-    QDomNode findNode2(QString nodeName);   //通过nameItem()函数进行节点查找，未完成
-
-    QDomNode findNode(QString nodeName);//通过节点名称查询节点信息，只能查询2个<>的，查询1个<>的会引起异常，查询不到内容好像也会引起异常
+    QDomNode findNode(QString nodeName);//通过节点名称查询节点信息
 
     UserInfo& toUserInfo();
+
+    //===============老版函数==================
+    void addNode_Obsolete(QString nodeName, QString nodeValue, QVector<QPair<QString, QString> >& attrs);          //在root节点最后新增节点，第三参数存储属性名及属性值
+
+    bool delNode_Obsolete(QString nodeName);//通过节点名称删除该节点
+
+    bool updateNode_Obsolete(QString oldNodeName, QString newValue);//修改节点名称为oldNodeName的节点值
+
+    QDomNode findNode_Obsolete(QString nodeName);//通过节点名称查询节点信息
 
 private:
 
