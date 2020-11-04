@@ -6,6 +6,6 @@
         <UserName>张三</UserName>
         <UserSex>男</UserSex>
         <UserAge>18</UserAge>
-		<UserAddress>齐齐哈尔</UserAddress>
+        <UserAddress>齐齐哈尔</UserAddress>
     </UserInfo>
 </Demo>

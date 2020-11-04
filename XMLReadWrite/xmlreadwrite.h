@@ -3,10 +3,12 @@
 
 #include <QObject>
 #include <QDebug>
-#include <QtXml/QDomDocument>
-#include <QtXml/QDomElement>
-#include <QtXml/QDomText>
-#include <QtXml/QDomNode>
+#include <QDomDocument>
+#include <QDomElement>
+#include <QDomText>
+#include <QDomNode>
+#include <QDomEntity>
+#include <QXmlStreamReader>
 #include <QFile>
 #include <QMessageBox>
 
@@ -33,13 +35,19 @@ public:
 
     void write(QString fileName);
 
-    void addNode();             //在root节点最后新增节点，且新增节点只能是通过attr指定值，一个<>一条数据，不是两个<>包裹数据
+    void addNode(QString nodeName, QString nodeValue, QVector<QPair<QString, QString> >& attrs);          //在root节点最后新增节点，第三参数存储属性名及属性值
 
-    void delNode(QString nodeName);//通过节点名称删除该节点
+//    void addNodeBefore(QString nodeName, QString nodeValue, QString refNodeName);
 
-    void updateNode(QString oldNodeName, QString newValue);//修改节点名称为oldNodeName的节点值
+//    void addNodeAfter(QString nodeName, QString nodeValue, QString refNodeName);
 
-    QDomNode searchNode(QString nodeName);//通过节点名称查询节点信息，只能查询2个<>的，查询1个<>的会引起异常，查询不到内容好像也会引起异常
+    bool delNode(QString nodeName);//通过节点名称删除该节点
+
+    bool updateNode(QString oldNodeName, QString newValue);//修改节点名称为oldNodeName的节点值
+
+    QDomNode findNode2(QString nodeName);   //通过nameItem()函数进行节点查找，未完成
+
+    QDomNode findNode(QString nodeName);//通过节点名称查询节点信息，只能查询2个<>的，查询1个<>的会引起异常，查询不到内容好像也会引起异常
 
     UserInfo& toUserInfo();
 
