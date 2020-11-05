@@ -6,7 +6,17 @@ MainWidget::MainWidget(QWidget *parent) :
     ui(new Ui::MainWidget)
 {
     ui->setupUi(this);
-
+    ui->tableWidget->setColumnCount(2);
+    ui->tableWidget->setRowCount(10);
+    ui->tableWidget->setHorizontalHeaderLabels(QString("AttributeName\n(Non Number),AttributeValue").split(","));
+    ui->tableWidget->setColumnWidth(0, 110);
+    ui->tableWidget->setColumnWidth(1, 110);
+    ui->tableWidget->horizontalHeader()->setStyleSheet("QHeaderView::section {"
+                                                        "color: black;padding-left: 0px;border: 1px solid #6c6c6c;}");
+    ui->tableWidget->verticalHeader()->setStyleSheet("QHeaderView::section {"
+                                                        "color: black;padding-left: 0px;border: 1px solid #6c6c6c;}");
+    ui->tableWidget->setAlternatingRowColors(true);
+    ui->tableWidget->setAutoScroll(true);
 }
 
 MainWidget::~MainWidget()
@@ -14,48 +24,267 @@ MainWidget::~MainWidget()
     delete ui;
 }
 
-void MainWidget::on_OpenBtn_clicked()
+void MainWidget::on_SelectBtn_clicked()
 {
     fileName = QFileDialog::getOpenFileName();
-    xmlRW = new XMLReadWrite(this, fileName);
-//    QString writeName = fileName.split(".")[0] + "Write.xml";
-//    xmlRW->write(writeName);
-    ui->lineEdit->setText(fileName);
-//    QVector<QString> vecInfo = xmlRW->read();
-//    qDebug()<<vecInfo;
-//    UserInfo info = xmlRW->toUserInfo();
-//    ui->plainTextEdit->appendPlainText(info.LogName);
-//    ui->plainTextEdit->appendPlainText(info.LogPwd);
-//    ui->plainTextEdit->appendPlainText(info.UserName);
-//    ui->plainTextEdit->appendPlainText(info.UserSex);
-//    ui->plainTextEdit->appendPlainText(QString("%1").arg(info.UserAge));
-//    ui->plainTextEdit->appendPlainText(info.UserAddress);
+    if(fileName.isEmpty())
+    {
+        QMessageBox::warning(this, "warning", "You haven't select file");
+        return;
+    }
+    ui->PathL->setText(fileName);
+}
 
-    QVector<QPair<QString, QString> > attrs;
-    QPair<QString, QString> p;
-    p.first = "year";
-    p.second = "2020";
-    attrs.append(p);
-    p.first = "month";
-    p.second = "11";
-    attrs.append(p);
-    p.first = "day";
-    p.second = "04";
-    attrs.append(p);
-    xmlRW->addNode("Date", "2020.11.24", attrs);                               //增
-    if(xmlRW->delNode("UserSex"))                      //删
-        qDebug()<<"del success";
+void MainWidget::on_btnRead_clicked()
+{
+    if(fileName.isEmpty())
+    {
+        QMessageBox::warning(this, "warning", "You haven't select file");
+        return;
+    }
+    XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
+    QVector<QString> vecInfo = xmlRW->read();
+    delete xmlRW;
+}
+
+void MainWidget::on_btnWrite_clicked()
+{
+    if(fileName.isEmpty())
+    {
+        QMessageBox::warning(this, "warning", "You haven't select file");
+        return;
+    }
+    XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
+    xmlRW->write(fileName);
+    delete xmlRW;
+}
+
+void MainWidget::on_btnAddSon_clicked()
+{
+    if(fileName.isEmpty())
+    {
+        QMessageBox::warning(this, "warning", "You haven't select file");
+        return;
+    }
+    XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
+    if(ui->nNameL->text().isEmpty() || ui->nRefNameL->text().isEmpty())                                    //节点名称不能为空，若空则添加失败；节点值可以为空，节点属性也可以为空
+    {
+        QMessageBox::information(this, "Failed", "NodeName and RefNodeName can't be Empty");
+        return;
+    }
     else
-        qDebug()<<"del failed";
-    if(xmlRW->updateNode("Email", "sdakjfa@163.com"))            //改
-        qDebug()<<"update success";
+    {
+        nodeName = ui->nNameL->text();
+        refNodeName = ui->nRefNameL->text();
+    }
+    if(ui->nValueL->text().isEmpty())
+        nodeValue = "";
     else
-        qDebug()<<"update failed";
-//    QDomNode node = xmlRW->findNode("UserSex");//查，通过节点名称查询该节点，返回该节点副本，可以通过副本查询节点属性，节点值
-      QDomNode node = xmlRW->findNode("Email");
+        nodeValue = ui->nValueL->text();
+    int size = ui->tableWidget->rowCount();
+    QPair<QString, QString> attr;
+    QTableWidgetItem *item1, *item2;
+    for(int i=0; i<size; ++i)
+    {
+        item1 = ui->tableWidget->item(i, 0);
+        item2 = ui->tableWidget->item(i,1);
+        if(item1==nullptr || item2==nullptr)                    //单元格未点击
+            continue;
+        if(item1->text().isEmpty() || item2->text().isEmpty())  //单元格点击后未输入
+            continue;
+        attr.first = item1->text();
+        attr.second = item2->text();
+        attrs.append(attr);
+    }
+
+    if(xmlRW->addSonNode(nodeName, nodeValue, refNodeName, attrs))
+        QMessageBox::information(this, "Success", "AddSon Success");
+    else
+        QMessageBox::information(this, "Failed", "AddSon failed");
+
+    delete xmlRW;
+}
+
+void MainWidget::on_btnInsertB_clicked()
+{
+    if(fileName.isEmpty())
+    {
+        QMessageBox::warning(this, "warning", "You haven't select file");
+        return;
+    }
+    XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
+    if(ui->nNameL->text().isEmpty() || ui->nRefNameL->text().isEmpty())                                    //节点名称不能为空，若空则添加失败；节点值可以为空，节点属性也可以为空
+    {
+        QMessageBox::information(this, "Failed", "NodeName and RefNodeName can't be Empty");
+        return;
+    }
+    else
+    {
+        nodeName = ui->nNameL->text();
+        refNodeName = ui->nRefNameL->text();
+    }
+    if(ui->nValueL->text().isEmpty())
+        nodeValue = "";
+    else
+        nodeValue = ui->nValueL->text();
+    int size = ui->tableWidget->rowCount();
+    QPair<QString, QString> attr;
+    QTableWidgetItem *item1, *item2;
+    for(int i=0; i<size; ++i)
+    {
+        item1 = ui->tableWidget->item(i, 0);
+        item2 = ui->tableWidget->item(i,1);
+        if(item1==nullptr || item2==nullptr)                    //单元格未点击
+            continue;
+        if(item1->text().isEmpty() || item2->text().isEmpty())  //单元格点击后未输入
+            continue;
+        attr.first = item1->text();
+        attr.second = item2->text();
+        attrs.append(attr);
+    }
+
+    if(xmlRW->insertNodeBefore(nodeName, nodeValue, refNodeName, attrs))
+        QMessageBox::information(this, "Success", "Insert Success");
+    else
+        QMessageBox::information(this, "Failed", "Insert failed");
+
+    delete xmlRW;
+}
+
+void MainWidget::on_btnInsertA_clicked()
+{
+    if(fileName.isEmpty())
+    {
+        QMessageBox::warning(this, "warning", "You haven't select file");
+        return;
+    }
+    XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
+    if(ui->nNameL->text().isEmpty() || ui->nRefNameL->text().isEmpty())                                    //节点名称不能为空，若空则添加失败；节点值可以为空，节点属性也可以为空
+    {
+        QMessageBox::information(this, "Failed", "NodeName and RefNodeName can't be Empty");
+        return;
+    }
+    else
+    {
+        nodeName = ui->nNameL->text();
+        refNodeName = ui->nRefNameL->text();
+    }
+    if(ui->nValueL->text().isEmpty())
+        nodeValue = "";
+    else
+        nodeValue = ui->nValueL->text();
+    int size = ui->tableWidget->rowCount();
+    QPair<QString, QString> attr;
+    QTableWidgetItem *item1, *item2;
+    for(int i=0; i<size; ++i)
+    {
+        item1 = ui->tableWidget->item(i, 0);
+        item2 = ui->tableWidget->item(i,1);
+        if(item1==nullptr || item2==nullptr)                    //单元格未点击
+            continue;
+        if(item1->text().isEmpty() || item2->text().isEmpty())  //单元格点击后未输入
+            continue;
+        attr.first = item1->text();
+        attr.second = item2->text();
+        attrs.append(attr);
+    }
+
+    if(xmlRW->insertNodeAfter(nodeName, nodeValue, refNodeName, attrs))
+        QMessageBox::information(this, "Success", "Insert Success");
+    else
+        QMessageBox::information(this, "Failed", "Insert failed");
+
+    delete xmlRW;
+}
+
+void MainWidget::on_btnDel_clicked()
+{
+    if(fileName.isEmpty())
+    {
+        QMessageBox::warning(this, "warning", "You haven't select file");
+        return;
+    }
+    XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
+    if(ui->nNameL->text().isEmpty())                                    //节点名称不能为空，若空则删除失败
+    {
+        QMessageBox::information(this, "Failed", "NodeName can't be Empty");
+        return;
+    }
+    else
+        nodeName = ui->nNameL->text();
+
+    if(xmlRW->delNode(nodeName))
+        QMessageBox::information(this, "Success", "Delete success");
+    else
+        QMessageBox::information(this, "Failed", "Delete failed");      //删除xml文件内不存在的值会弹出此提示
+    delete xmlRW;
+}
+
+void MainWidget::on_btnUpdate_clicked()
+{
+    if(fileName.isEmpty())
+    {
+        QMessageBox::warning(this, "warning", "You haven't select file");
+        return;
+    }
+    XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
+    if(ui->nNameL->text().isEmpty() || ui->nValueL->text().isEmpty())                                    //节点名称不能为空，若空则删除失败
+    {
+        QMessageBox::information(this, "Failed", "NodeName or NodeValue can't be Empty");
+        return;
+    }
+    else
+    {
+        nodeName = ui->nNameL->text();
+        nodeValue = ui->nValueL->text();
+    }
+
+    int size = ui->tableWidget->rowCount();
+    QPair<QString, QString> attr;
+    QTableWidgetItem *item1, *item2;
+    for(int i=0; i<size; ++i)
+    {
+        item1 = ui->tableWidget->item(i, 0);
+        item2 = ui->tableWidget->item(i, 1);
+        if(item1==nullptr || item2==nullptr)
+            continue;
+        if(item1->text().isEmpty() || item2->text().isEmpty())
+            continue;
+        attr.first = item1->text();
+        attr.second = item2->text();
+        attrs.append(attr);
+    }
+
+    if(xmlRW->updateNode(nodeName, nodeValue, attrs))
+        QMessageBox::information(this, "Success", "Update success");
+    else
+        QMessageBox::information(this, "Failed", "Update failed");      //修改xml文件里不存在的值会弹出此提示
+    delete xmlRW;
+}
+
+void MainWidget::on_btnFind_clicked()
+{
+    if(fileName.isEmpty())
+    {
+        QMessageBox::warning(this, "warning", "You haven't select file");
+        return;
+    }
+    XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
+    if(ui->nNameL->text().isEmpty())                                    //节点名称不能为空，若空则删除失败
+    {
+        QMessageBox::information(this, "Failed", "NodeName can't be Empty");
+        return;
+    }
+    else
+        nodeName = ui->nNameL->text();
+
+    QDomNode node = xmlRW->findNode(nodeName);
+
     if(!node.isNull())
-        qDebug()<<"find success"<<node.nodeName()<<node.firstChild().nodeValue()<<node.toElement().text()<<node.toElement().attribute("e1");
+    {
+        QMessageBox::information(this, "Success", "Find success");
+    }
     else
-        qDebug()<<"find failed";
-
+        QMessageBox::information(this, "Failed", "Find failed");
+    delete xmlRW;
 }

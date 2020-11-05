@@ -12,14 +12,17 @@
 #include <QFile>
 #include <QMessageBox>
 
-struct UserInfo
+struct LogInfo
 {
     QString LogName;
     QString LogPwd;
-    QString UserName;
-    QString UserSex;
+    QString UserName;    
     int UserAge;
+    QString UserSex;
     QString UserAddress;
+    QString Email;
+    QString LogInTime;
+    QString LogOutTime;
 };
 
 /**
@@ -35,40 +38,27 @@ public:
 
     void write(QString fileName);
 
-    bool addNode(QString nodeName, QString nodeValue, QVector<QPair<QString, QString> >& attrs);          //在root节点最后新增节点，第三参数存储属性名及属性值
+    bool addSonNode(QString nodeName, QString nodeValue, QString refNodeName, QVector<QPair<QString, QString> >& attrs);          //在root节点最后新增节点，第三参数存储属性名及属性值
 
-//    bool addNodeBefore(QString nodeName, QString nodeValue, QString refNodeName);
+    bool insertNodeBefore(QString nodeName, QString nodeValue, QString refNodeName, QVector<QPair<QString, QString> > &attrs);
 
-//    bool addNodeAfter(QString nodeName, QString nodeValue, QString refNodeName);
+    bool insertNodeAfter(QString nodeName, QString nodeValue, QString refNodeName, QVector<QPair<QString, QString> > &attrs);
 
     bool delNode(QString nodeName);//通过节点名称删除该节点
 
-    bool updateNode(QString oldNodeName, QString newValue);//修改节点名称为oldNodeName的节点值
+    bool updateNode(QString oldNodeName, QString newValue, QVector<QPair<QString, QString> >& attrs);//修改节点名称为oldNodeName的节点值
 
-    QDomNode findNode(QString nodeName);//通过节点名称查询节点信息
+    QDomNode findNode(QString nodeName);//通过节点名称查询节点，若知道节点属性名，也可获得属性值，但是无法显示所有属性的键值对
 
-    UserInfo& toUserInfo();
-
-    //===============老版函数==================
-    void addNode_Obsolete(QString nodeName, QString nodeValue, QVector<QPair<QString, QString> >& attrs);          //在root节点最后新增节点，第三参数存储属性名及属性值
-
-    bool delNode_Obsolete(QString nodeName);//通过节点名称删除该节点
-
-    bool updateNode_Obsolete(QString oldNodeName, QString newValue);//修改节点名称为oldNodeName的节点值
-
-    QDomNode findNode_Obsolete(QString nodeName);//通过节点名称查询节点信息
+    LogInfo& toLogInfo();
 
 private:
 
     QString fileName;
 
-    QVector<QString> readInfo;
+    QVector<QString> readInfo;      //在read()和toUserInfo()方法中使用
 
-    UserInfo userInfo;
-
-signals:
-
-public slots:
+    LogInfo logInfo;
 };
 
 #endif // XMLREADWRITE_H

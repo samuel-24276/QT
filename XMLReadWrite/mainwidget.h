@@ -20,14 +20,36 @@ public:
     ~MainWidget();
 
 private slots:
-    void on_OpenBtn_clicked();
+    void on_SelectBtn_clicked();
+
+    void on_btnRead_clicked();
+
+    void on_btnWrite_clicked();
+
+    void on_btnAddSon_clicked();
+
+    void on_btnInsertB_clicked();
+
+    void on_btnInsertA_clicked();
+
+    void on_btnDel_clicked();
+
+    void on_btnUpdate_clicked();
+
+    void on_btnFind_clicked();
 
 private:
     Ui::MainWidget *ui;
 
-    QString fileName;
+    QString fileName;    
 
-    XMLReadWrite* xmlRW;
+    QString nodeName;
+
+    QString nodeValue;
+
+    QString refNodeName;
+
+    QVector<QPair<QString, QString> > attrs;
 };
 
 #endif // MAINWIDGET_H

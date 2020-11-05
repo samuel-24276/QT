@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<LogInfo>
+    <LogName>当年明月在</LogName>
+    <LogPwd>123456</LogPwd>
+    <UserInfo>
+        <UserName>张三</UserName>
+        <UserAge>28</UserAge>
+        <UserSex>男</UserSex>
+        <UserAddress>山东省济南市</UserAddress>
+        <Email suffix="@qq.com">sdakjfa@163.com</Email>
+    </UserInfo>
+    <LogInTime>2020.11.05 14:53:023</LogInTime>
+    <LogOutTime>2020.11.05 14:53:153</LogOutTime>
+</LogInfo>
