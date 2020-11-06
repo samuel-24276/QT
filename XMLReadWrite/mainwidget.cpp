@@ -6,6 +6,7 @@ MainWidget::MainWidget(QWidget *parent) :
     ui(new Ui::MainWidget)
 {
     ui->setupUi(this);
+    nName = new Node();
     ui->tableWidget->setColumnCount(2);
     ui->tableWidget->setRowCount(10);
     ui->tableWidget->setHorizontalHeaderLabels(QString("AttributeName\n(Non Number),AttributeValue").split(","));
@@ -17,11 +18,134 @@ MainWidget::MainWidget(QWidget *parent) :
                                                         "color: black;padding-left: 0px;border: 1px solid #6c6c6c;}");
     ui->tableWidget->setAlternatingRowColors(true);
     ui->tableWidget->setAutoScroll(true);
+
+    connect(ui->btnAddInfo, SIGNAL(clicked()), this, SLOT(addInfo()));
+    connect(ui->btnDelInfo, SIGNAL(clicked()), this, SLOT(delInfo()));
+    connect(ui->btnUpdateInfo, SIGNAL(clicked()), this, SLOT(updateInfo()));
+    connect(ui->btnFindInfo, SIGNAL(clicked()), this, SLOT(findInfo()));
 }
 
 MainWidget::~MainWidget()
 {
     delete ui;
+}
+
+void MainWidget::addInfo()
+{
+    if(!isFileSelected() || !checkInfo())           //未选择文件或者信息不完善，直接返回
+        return;
+    XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
+    fillInfo();
+    QString recordId = QString("%1").arg(++recordNum);
+    bool flag=true;
+    flag = flag && xmlRW->addRecordNode(nName->recordRootName, recordId);
+    flag = flag && xmlRW->addElementById(nName->LogName, logInfo.LogName, attrs, nName->recordRootName, recordId);
+    flag = flag && xmlRW->addElementById(nName->LogPwd, logInfo.LogPwd, attrs, nName->recordRootName, recordId);
+    flag = flag && xmlRW->addSonNodeById(nName->UserInfo, attrs, nName->recordRootName, recordId);
+    flag = flag && xmlRW->addElementById(nName->UserName, logInfo.UserName, attrs, nName->UserInfo, recordId);
+    flag = flag && xmlRW->addElementById(nName->UserAge, logInfo.UserAge, attrs, nName->UserInfo, recordId);
+    flag = flag && xmlRW->addElementById(nName->UserSex, logInfo.UserSex, attrs, nName->UserInfo, recordId);
+    flag = flag && xmlRW->addElementById(nName->UserAddress, logInfo.UserAddress, attrs, nName->UserInfo, recordId);
+    flag = flag && xmlRW->addElementById(nName->Email, logInfo.Email, attrs, nName->UserInfo, recordId);
+    flag = flag && xmlRW->addElementById(nName->LogInTime, logInfo.LogInTime, attrs, nName->recordRootName, recordId);
+    flag = flag && xmlRW->addElementById(nName->LogOutTime, logInfo.LogOutTime, attrs, nName->recordRootName, recordId);
+    if(flag)
+        QMessageBox::information(this, "Success", "Add success");
+    else
+        QMessageBox::information(this, "Failed", "Add failed");
+    delete xmlRW;
+}
+
+void MainWidget::delInfo()
+{
+    if(!isFileSelected() || !checkInfo(1))           //未选择文件或者信息不完善，直接返回
+        return;
+    XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
+    if(xmlRW->delRecordNode_complete(ui->LogNameL->text()))
+        QMessageBox::information(this, "Success", "Delete success");
+    else
+        QMessageBox::information(this, "Failed", "Delete failed");
+    delete xmlRW;
+}
+
+void MainWidget::updateInfo()
+{
+    if(!isFileSelected() || !checkInfo(1))           //未选择文件或者信息不完善，直接返回
+        return;
+    XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
+    QString recordId = xmlRW->updateRecordNode_complete(ui->LogNameL->text());
+    fillInfo();
+    bool flag=true;
+    flag = flag && xmlRW->addRecordNode(nName->recordRootName, recordId);
+    flag = flag && xmlRW->addElementById(nName->LogName, logInfo.LogName, attrs, nName->recordRootName, recordId);
+    flag = flag && xmlRW->addElementById(nName->LogPwd, logInfo.LogPwd, attrs, nName->recordRootName, recordId);
+    flag = flag && xmlRW->addSonNodeById(nName->UserInfo, attrs, nName->recordRootName, recordId);
+    flag = flag && xmlRW->addElementById(nName->UserName, logInfo.UserName, attrs, nName->UserInfo, recordId);
+    flag = flag && xmlRW->addElementById(nName->UserAge, logInfo.UserAge, attrs, nName->UserInfo, recordId);
+    flag = flag && xmlRW->addElementById(nName->UserSex, logInfo.UserSex, attrs, nName->UserInfo, recordId);
+    flag = flag && xmlRW->addElementById(nName->UserAddress, logInfo.UserAddress, attrs, nName->UserInfo, recordId);
+    flag = flag && xmlRW->addElementById(nName->Email, logInfo.Email, attrs, nName->UserInfo, recordId);
+    flag = flag && xmlRW->addElementById(nName->LogInTime, logInfo.LogInTime, attrs, nName->recordRootName, recordId);
+    flag = flag && xmlRW->addElementById(nName->LogOutTime, logInfo.LogOutTime, attrs, nName->recordRootName, recordId);
+    if(flag)
+        QMessageBox::information(this, "Success", "Update success");
+    else
+        QMessageBox::information(this, "Failed", "Update failed");
+    delete xmlRW;
+}
+
+void MainWidget::findInfo()
+{
+    if(!isFileSelected() || !checkInfo(1))           //未选择文件或者信息不完善，直接返回
+        return;
+    XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
+    if(xmlRW->findRecordNode_complete(ui->LogNameL->text()))
+        QMessageBox::information(this, "Success", "Find success");
+    else
+        QMessageBox::information(this, "Failed", "Find failed");
+    delete xmlRW;
+}
+
+bool MainWidget::isFileSelected()
+{
+    if(fileName.isEmpty())
+    {
+        QMessageBox::warning(this, "warning", "You haven't select file");
+        return false;
+    }
+    return true;
+}
+
+bool MainWidget::checkInfo(int i)
+{
+    bool flag;
+    if(i)
+        flag = ui->LogNameL->text().isEmpty();
+    else
+        flag = ui->LogNameL->text().isEmpty() || ui->LogPwdL->text().isEmpty() ||
+            ui->UserNameL->text().isEmpty() || ui->UserAgeL->text().isEmpty() ||
+            ui->UserSexL->text().isEmpty() || ui->UserAddressL->text().isEmpty() ||
+            ui->EmailL->text().isEmpty() || ui->LogInTimeL->text().isEmpty() ||
+            ui->LogOutTimeL->text().isEmpty();
+    if(flag)
+    {
+        QMessageBox::information(this, "Failed", "Some info doesn't fill in.");
+        return false;
+    }
+    return true;
+}
+
+void MainWidget::fillInfo()
+{
+    logInfo.LogName = ui->LogNameL->text();
+    logInfo.LogPwd = ui->LogPwdL->text();
+    logInfo.LogInTime = ui->LogInTimeL->text();
+    logInfo.LogOutTime = ui->LogOutTimeL->text();
+    logInfo.UserName = ui->UserNameL->text();
+    logInfo.UserAge = ui->UserAgeL->text();
+    logInfo.UserSex = ui->UserSexL->text();
+    logInfo.UserAddress = ui->UserAddressL->text();
+    logInfo.Email = ui->EmailL->text();
 }
 
 void MainWidget::on_SelectBtn_clicked()
@@ -33,6 +157,9 @@ void MainWidget::on_SelectBtn_clicked()
         return;
     }
     ui->PathL->setText(fileName);
+    XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
+    recordNum = xmlRW->lastNode().toElement().attribute("id").toInt();
+    delete xmlRW;
 }
 
 void MainWidget::on_btnRead_clicked()
@@ -61,11 +188,7 @@ void MainWidget::on_btnWrite_clicked()
 
 void MainWidget::on_btnAddSon_clicked()
 {
-    if(fileName.isEmpty())
-    {
-        QMessageBox::warning(this, "warning", "You haven't select file");
-        return;
-    }
+
     XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
     if(ui->nNameL->text().isEmpty() || ui->nRefNameL->text().isEmpty())                                    //节点名称不能为空，若空则添加失败；节点值可以为空，节点属性也可以为空
     {
@@ -197,7 +320,7 @@ void MainWidget::on_btnInsertA_clicked()
     delete xmlRW;
 }
 
-void MainWidget::on_btnDel_clicked()
+void MainWidget::on_btnDelNode_clicked()
 {
     if(fileName.isEmpty())
     {
@@ -220,7 +343,7 @@ void MainWidget::on_btnDel_clicked()
     delete xmlRW;
 }
 
-void MainWidget::on_btnUpdate_clicked()
+void MainWidget::on_btnUpdateNode_clicked()
 {
     if(fileName.isEmpty())
     {
@@ -262,7 +385,7 @@ void MainWidget::on_btnUpdate_clicked()
     delete xmlRW;
 }
 
-void MainWidget::on_btnFind_clicked()
+void MainWidget::on_btnFindNode_clicked()
 {
     if(fileName.isEmpty())
     {
@@ -287,4 +410,20 @@ void MainWidget::on_btnFind_clicked()
     else
         QMessageBox::information(this, "Failed", "Find failed");
     delete xmlRW;
+}
+
+Node::Node()
+{
+    docRootName = "LogRecords";
+    recordRootName = "LogInfo";
+    LogName = "LogName";
+    LogPwd = "LogPwd";
+    UserInfo = "UserInfo";
+    UserName = "UserName";
+    UserAge = "UserAge";
+    UserSex = "UserSex";
+    UserAddress = "UserAddress";
+    Email = "Email";
+    LogInTime = "LogInTime";
+    LogOutTime = "LogOutTime";
 }

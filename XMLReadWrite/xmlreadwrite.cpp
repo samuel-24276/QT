@@ -8,19 +8,10 @@ XMLReadWrite::XMLReadWrite(QObject *parent, QString fName) : QObject(parent), fi
 QVector<QString> XMLReadWrite::read()
 {    
     QDomNode node;
-    QFile file(fileName);
-    if(!file.open(QIODevice::ReadOnly))
-        return readInfo;
+    QVector<QString> readInfo;
     QDomDocument doc;
-    QString errorMsg;
-    int errorRow, errorColumn;
-    if(!doc.setContent(&file, &errorMsg, &errorRow, &errorColumn))
-    {
-        QMessageBox::warning(0, "warning", errorMsg+",Row:"+QString("%1").arg(errorRow)+",Column:"+QString("%1").arg(errorColumn));
-        file.close();
+    if(!getDoc(fileName, doc))
         return readInfo;
-    }
-    file.close();
 
     QDomElement root = doc.documentElement();
     if(root.isNull())
@@ -103,24 +94,32 @@ void XMLReadWrite::write(QString fileName)
     file.close();
 }
 
-bool XMLReadWrite::addSonNode(QString nodeName, QString nodeValue, QString refNodeName, QVector<QPair<QString, QString> > &attrs)
+bool XMLReadWrite::addRecordNode(QString nodeName, QString recordRootId)   //recordRootId是当前xml文件最后一个LogInfo节点的id
 {
     if(nodeName.isEmpty())              //在界面端已进行判断，可以去掉
         return false;
+    QDomDocument doc;
+    if(!getDoc(fileName, doc))
+        return false;
+
     QFile file(fileName);
-    if(!file.open(QIODevice::ReadOnly))
+    QDomElement root = doc.documentElement();
+    if(root.isNull())
+        return false;
+    QDomElement newNode = doc.createElement(nodeName);
+    newNode.setAttribute("id", recordRootId);
+    root.appendChild(newNode);
+    return saveChange(doc, file);
+}
+
+bool XMLReadWrite::addElementById(QString nodeName, QString nodeValue, QVector<QPair<QString, QString> > &attrs, QString refNodeName, QString recordRootId)
+{
+    if(nodeName.isEmpty())              //在界面端已进行判断，可以去掉
         return false;
     QDomDocument doc;
-    QString errorMsg;
-    int errorRow, errorColumn;
-    if(!doc.setContent(&file, &errorMsg, &errorRow, &errorColumn))
-    {
-        QMessageBox::warning(0, "warning", errorMsg+",Row:"+QString("%1").arg(errorRow)+",Column:"+QString("%1").arg(errorColumn));
-        file.close();
+    if(!getDoc(fileName, doc))
         return false;
-    }        
-    file.close();
-
+    QFile file(fileName);
     QDomElement root = doc.documentElement();
     if(root.isNull())
         return false;
@@ -134,12 +133,201 @@ bool XMLReadWrite::addSonNode(QString nodeName, QString nodeValue, QString refNo
             newNode.setAttribute(pair.first, pair.second);
         }
         root.appendChild(newNode);
-        if(!file.open(QIODevice::WriteOnly))
+        return saveChange(doc, file);
+    }
+
+    QDomNode node = root.firstChild();                      //=========给根节点以外的节点添加子节点
+    while(node!=root)                       //当前节点不是根节点，循环进入子层
+    {
+        if(!node.toElement().attribute("id", "").isEmpty() && node.toElement().attribute("id")!=recordRootId)//判空可以防止死循环
+        {
+            if(!node.nextSibling().isNull())
+                node = node.nextSibling();
+            else
+                node = node.parentNode();
+        }
+        else
+        {
+            if(node.nodeName() == refNodeName)
+            {
+                if(node.firstChild().isText())                          //节点已含有值，则不可添加子节点
+                    return false;
+                QDomElement newNode = doc.createElement(nodeName);        //新节点,因为要设置属性，所以要使用QDomNode的子类QDomElement
+                newNode.appendChild(doc.createTextNode(nodeValue));
+                for(int i=0; i<attrs.size(); ++i)
+                {
+                    QPair<QString, QString> pair = attrs.at(i);
+                    newNode.setAttribute(pair.first, pair.second);
+                }
+                node.appendChild(newNode);
+                return saveChange(doc, file);
+            }
+            if(node.firstChild().isElement())   //有孩子节点，继续进入下一层
+            {
+                node = node.firstChild();
+            }
+            else if(!node.nextSibling().isNull())//没孩子节点但兄弟节点不空，进入兄弟层
+                node = node.nextSibling();
+            else                                 //没孩子节点没兄弟节点，需要层层返回（循环）到父层的兄弟节点层去寻找
+            {
+                while(node.parentNode()!=root && node.nextSibling().isNull())
+                {
+                    node = node.parentNode();
+                }
+                if(node.nextSibling().isNull())
+                    node = node.parentNode();
+                else
+                    node = node.nextSibling();
+            }
+        }
+    }
+    return false;
+}
+
+bool XMLReadWrite::addSonNodeById(QString nodeName, QVector<QPair<QString, QString> > &attrs, QString refNodeName, QString recordRootId)
+{
+    if(nodeName.isEmpty())
+        return false;
+    QDomDocument doc;
+    if(!getDoc(fileName, doc))
+        return false;
+    QFile file(fileName);
+    QDomElement root = doc.documentElement();
+    if(root.nodeName() == refNodeName)                      //被添加节点父节点为根节点，直接返回，应该调用addRecordNode()方法
+        return false;
+    if(root.isNull())
+        return false;
+
+    QDomNode node = root.firstChild();                      //给根节点以外的节点添加子节点
+    while(node!=root)                                       //当前节点不是根节点，循环进入子层
+    {
+        if(!node.toElement().attribute("id", "").isEmpty() && node.toElement().attribute("id", "")!=recordRootId)
+        {
+            if(!node.nextSibling().isNull())
+                node = node.nextSibling();
+            else
+                node = node.parentNode();
+        }
+        else
+        {
+            if(node.nodeName() == refNodeName)
+            {
+                if(node.firstChild().isText())                          //节点已含有值，则不可添加子节点
+                    return false;
+                QDomElement newNode = doc.createElement(nodeName);        //新节点,因为要设置属性，所以要使用QDomNode的子类QDomElement
+                for(int i=0; i<attrs.size(); ++i)
+                {
+                    QPair<QString, QString> pair = attrs.at(i);
+                    newNode.setAttribute(pair.first, pair.second);
+                }
+                node.appendChild(newNode);
+                return saveChange(doc, file);
+            }
+            else
+            {
+                if(node.firstChild().isElement())   //有孩子节点，继续进入下一层
+                {
+                    node = node.firstChild();
+                }
+                else if(!node.nextSibling().isNull())//没孩子节点但兄弟节点不空，进入兄弟层
+                    node = node.nextSibling();
+                else                                 //没孩子节点没兄弟节点，需要层层返回（循环）到父层的兄弟节点层去寻找
+                {
+                    while(node.parentNode()!=root && node.nextSibling().isNull())
+                    {
+                        node = node.parentNode();
+                    }
+                    if(node.nextSibling().isNull())
+                        node = node.parentNode();
+                    else
+                        node = node.nextSibling();
+                }
+            }
+        }
+    }
+    return false;
+}
+
+bool XMLReadWrite::delRecordNode_complete(QString nodeName)
+{
+    QDomDocument doc;
+    if(!getDoc(fileName, doc))
+        return false;
+    QFile file(fileName);
+    QDomElement root = doc.documentElement();
+    if(root.isNull())
+        return false;
+    QDomNode node = root.firstChild();
+    while(node.firstChild().firstChild().nodeValue() != nodeName)
+    {
+        node = node.nextSibling();
+        if(node.isNull())           //欲删除的节点不存在
             return false;
-        QTextStream out(&file);
-        doc.save(out, 4);     //保存到文件中
-        file.close();
-        return true;
+    }
+    root.removeChild(node);
+    return saveChange(doc, file);
+}
+
+QString XMLReadWrite::updateRecordNode_complete(QString nodeName)
+{
+    QDomDocument doc;
+    if(!getDoc(fileName, doc))
+        return false;
+    QDomElement root = doc.documentElement();
+    if(root.isNull())
+        return false;
+    QDomNode node = root.firstChild();
+    while(node.firstChild().firstChild().nodeValue()!=nodeName)
+    {
+        if(node.nextSibling().isNull())     //欲更改的节点不存在
+            return false;
+        node = node.nextSibling();
+    }
+    QString id = node.toElement().attribute("id");
+    delRecordNode_complete(nodeName);
+    return id;
+}
+
+bool XMLReadWrite::findRecordNode_complete(QString nodeName)
+{
+    QDomDocument doc;
+    if(!getDoc(fileName, doc))
+        return false;
+    QDomElement root = doc.documentElement();
+    if(root.isNull())
+        return false;
+    QDomNode node = root.firstChild();
+    while(node.firstChild().firstChild().nodeValue()!=nodeName)
+    {
+        if(node.nextSibling().isNull())     //欲查询的节点不存在
+            return false;
+        node = node.nextSibling();
+    }
+    return true;
+}
+
+bool XMLReadWrite::addSonNode(QString nodeName, QString nodeValue, QString refNodeName, QVector<QPair<QString, QString> > &attrs)
+{
+    if(nodeName.isEmpty())              //在界面端已进行判断，可以去掉
+        return false;
+    QDomDocument doc;
+    if(!getDoc(fileName, doc))
+        return false;
+    QFile file(fileName);
+    QDomElement root = doc.documentElement();
+    if(root.isNull())
+        return false;
+    if(refNodeName == root.nodeName())                      //=======给根节点添加子节点
+    {
+        QDomElement newNode = doc.createElement(nodeName);
+        newNode.appendChild(doc.createTextNode(nodeValue));
+        for(int i=0; i<attrs.size(); ++i)
+        {
+            QPair<QString, QString> pair = attrs.at(i);
+            newNode.setAttribute(pair.first, pair.second);
+        }
+        root.appendChild(newNode);
+        return saveChange(doc, file);
     }
 
     QDomNode node = root.firstChild();                      //=========给根节点以外的节点添加子节点
@@ -157,12 +345,7 @@ bool XMLReadWrite::addSonNode(QString nodeName, QString nodeValue, QString refNo
                 newNode.setAttribute(pair.first, pair.second);
             }
             node.appendChild(newNode);
-            if(!file.open(QIODevice::WriteOnly))
-                return false;
-            QTextStream out(&file);
-            doc.save(out, 4);     //保存到文件中
-            file.close();
-            return true;
+            return saveChange(doc, file);
         }
         if(node.firstChild().isElement())   //有孩子节点，继续进入下一层
         {
@@ -189,19 +372,10 @@ bool XMLReadWrite::insertNodeBefore(QString nodeName, QString nodeValue, QString
 {
     if(nodeName.isEmpty())
         return false;
-    QFile file(fileName);
-    if(!file.open(QIODevice::ReadOnly))
-        return false;
     QDomDocument doc;
-    QString errorMsg;
-    int errorRow, errorColumn;
-    if(!doc.setContent(&file, &errorMsg, &errorRow, &errorColumn))
-    {
-        QMessageBox::warning(0, "warning", errorMsg+",Row:"+QString("%1").arg(errorRow)+",Column:"+QString("%1").arg(errorColumn));
-        file.close();
+    if(!getDoc(fileName, doc))
         return false;
-    }
-    file.close();
+    QFile file(fileName);
 
     QDomElement root = doc.documentElement();
     if(root.isNull())
@@ -220,12 +394,7 @@ bool XMLReadWrite::insertNodeBefore(QString nodeName, QString nodeValue, QString
                 newNode.setAttribute(pair.first, pair.second);
             }
             parNode.insertBefore(newNode, node);                        //第二参数必须是调用者的直接子集，才能调用成功
-            if(!file.open(QIODevice::WriteOnly))
-                return false;
-            QTextStream out(&file);
-            doc.save(out, 4);     //保存到文件中
-            file.close();
-            return true;
+            return saveChange(doc, file);
         }
         if(node.firstChild().isElement())   //有孩子节点，继续进入下一层
         {
@@ -252,19 +421,10 @@ bool XMLReadWrite::insertNodeAfter(QString nodeName, QString nodeValue, QString 
 {
     if(nodeName.isEmpty())
         return false;
-    QFile file(fileName);
-    if(!file.open(QIODevice::ReadOnly))
-        return false;
     QDomDocument doc;
-    QString errorMsg;
-    int errorRow, errorColumn;
-    if(!doc.setContent(&file, &errorMsg, &errorRow, &errorColumn))
-    {
-        QMessageBox::warning(0, "warning", errorMsg+",Row:"+QString("%1").arg(errorRow)+",Column:"+QString("%1").arg(errorColumn));
-        file.close();
+    if(!getDoc(fileName, doc))
         return false;
-    }
-    file.close();
+    QFile file(fileName);
 
     QDomElement root = doc.documentElement();
     if(root.isNull())
@@ -283,12 +443,7 @@ bool XMLReadWrite::insertNodeAfter(QString nodeName, QString nodeValue, QString 
                 newNode.setAttribute(pair.first, pair.second);
             }
             parNode.insertAfter(newNode, node);                        //第二参数必须是调用者的直接子集，才能调用成功
-            if(!file.open(QIODevice::WriteOnly))
-                return false;
-            QTextStream out(&file);
-            doc.save(out, 4);     //保存到文件中
-            file.close();
-            return true;
+            return saveChange(doc, file);
         }
         if(node.firstChild().isElement())   //有孩子节点，继续进入下一层
         {
@@ -314,19 +469,10 @@ bool XMLReadWrite::insertNodeAfter(QString nodeName, QString nodeValue, QString 
 bool XMLReadWrite::delNode(QString nodeName)
 {
     QDomNode node;
-    QFile file(fileName);
-    if(!file.open(QIODevice::ReadOnly))
-        return false;
     QDomDocument doc;
-    QString errorMsg;
-    int errorRow, errorColumn;
-    if(!doc.setContent(&file, &errorMsg, &errorRow, &errorColumn))
-    {
-        QMessageBox::warning(0, "warning", errorMsg+",Row:"+QString("%1").arg(errorRow)+",Column:"+QString("%1").arg(errorColumn));
-        file.close();
+    if(!getDoc(fileName, doc))
         return false;
-    }
-    file.close();
+    QFile file(fileName);
 
     QDomElement root = doc.documentElement();
     if(root.isNull())
@@ -340,12 +486,7 @@ bool XMLReadWrite::delNode(QString nodeName)
             QDomNode parNode = node.parentNode();
             if(!parNode.removeChild(node).isNull())         //删除成功，跳出循环，保存当前修改
             {
-                if(!file.open(QIODevice::WriteOnly))
-                    return false;
-                QTextStream out(&file);
-                doc.save(out, 4);     //保存到文件中
-                file.close();
-                return true;
+                return saveChange(doc, file);
             }
         }
         if(node.firstChild().isElement())   //有孩子节点，继续进入下一层
@@ -372,19 +513,10 @@ bool XMLReadWrite::delNode(QString nodeName)
 bool XMLReadWrite::updateNode(QString oldNodeName, QString newValue, QVector<QPair<QString, QString> >& attrs)
 {
     QDomNode node;
-    QFile file(fileName);
-    if(!file.open(QIODevice::ReadOnly))
-        return false;
     QDomDocument doc;
-    QString errorMsg;
-    int errorRow, errorColumn;
-    if(!doc.setContent(&file, &errorMsg, &errorRow, &errorColumn))
-    {
-        QMessageBox::warning(0, "warning", errorMsg+",Row:"+QString("%1").arg(errorRow)+",Column:"+QString("%1").arg(errorColumn));
-        file.close();
+    if(!getDoc(fileName, doc))
         return false;
-    }
-    file.close();
+    QFile file(fileName);
 
     QDomElement root = doc.documentElement();
     if(root.isNull())
@@ -404,12 +536,7 @@ bool XMLReadWrite::updateNode(QString oldNodeName, QString newValue, QVector<QPa
                 newNode.setAttribute(pair.first, pair.second);
             }
             parNode.replaceChild(newNode, node);
-            if(!file.open(QIODevice::WriteOnly))
-                return false;
-            QTextStream out(&file);
-            doc.save(out, 4);     //保存到文件中
-            file.close();
-            return true;
+            return saveChange(doc, file);
         }
         if(node.firstChild().isElement())   //有孩子节点，继续进入下一层
         {
@@ -435,19 +562,9 @@ bool XMLReadWrite::updateNode(QString oldNodeName, QString newValue, QVector<QPa
 QDomNode XMLReadWrite::findNode(QString nodeName)
 {
     QDomNode node;
-    QFile file(fileName);
-    if(!file.open(QIODevice::ReadOnly))
-        return node;
     QDomDocument doc;
-    QString errorMsg;
-    int errorRow, errorColumn;
-    if(!doc.setContent(&file, &errorMsg, &errorRow, &errorColumn))
-    {
-        QMessageBox::warning(0, "warning", errorMsg+",Row:"+QString("%1").arg(errorRow)+",Column:"+QString("%1").arg(errorColumn));
-        file.close();
+    if(!getDoc(fileName, doc))
         return node;
-    }
-    file.close();
 
     QDomElement root = doc.documentElement();
     if(root.isNull())
@@ -480,19 +597,52 @@ QDomNode XMLReadWrite::findNode(QString nodeName)
     return nullNode;
 }
 
-LogInfo& XMLReadWrite::toLogInfo()
+QDomNode XMLReadWrite::lastNode()
 {
-    if(readInfo.size()>0)
+    QDomNode node;
+    QFile file(fileName);
+    if(!file.open(QIODevice::ReadOnly))
+        return node;
+    QDomDocument doc;
+    QString errorMsg;
+    int errorRow, errorColumn;
+    if(!doc.setContent(&file, &errorMsg, &errorRow, &errorColumn))
     {
-        logInfo.LogName = readInfo.at(0);
-        logInfo.LogPwd = readInfo.at(1);
-        logInfo.UserName = readInfo.at(2);
-        logInfo.UserAge = readInfo.at(3).toInt();
-        logInfo.UserSex = readInfo.at(4);
-        logInfo.UserAddress = readInfo.at(5);
-        logInfo.Email = readInfo.at(6);
-        logInfo.LogInTime = readInfo.at(7);
-        logInfo.LogOutTime = readInfo.at(8);
+        QMessageBox::warning(0, "warning", errorMsg+",Row:"+QString("%1").arg(errorRow)+",Column:"+QString("%1").arg(errorColumn));
+        file.close();
+        return node;
     }
-    return logInfo;
+    file.close();
+
+    QDomElement root = doc.documentElement();
+    if(root.isNull())
+        return node;
+    return root.lastChild();
+}
+
+bool XMLReadWrite::getDoc(QString fileName, QDomDocument& doc)
+{
+    QFile file(fileName);
+    if(!file.open(QIODevice::ReadOnly))
+        return false;
+    QString errorMsg;
+    int errorRow, errorColumn;
+    if(!doc.setContent(&file, &errorMsg, &errorRow, &errorColumn))
+    {
+        QMessageBox::warning(0, "warning", errorMsg+",Row:"+QString("%1").arg(errorRow)+",Column:"+QString("%1").arg(errorColumn));
+        file.close();
+        return false;
+    }
+    file.close();
+    return true;
+}
+
+bool XMLReadWrite::saveChange(QDomDocument &doc, QFile &file)
+{
+    if(!file.open(QIODevice::WriteOnly))
+        return false;
+    QTextStream out(&file);
+    doc.save(out, 4);     //保存到文件中
+    file.close();
+    return true;
 }

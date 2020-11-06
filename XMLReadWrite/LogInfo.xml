@@ -1,14 +1,30 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<LogInfo>
-    <LogName>当年明月在</LogName>
-    <LogPwd>123456</LogPwd>
-    <UserInfo>
-        <UserName>张三</UserName>
-        <UserAge>28</UserAge>
-        <UserSex>男</UserSex>
-        <UserAddress>山东省济南市</UserAddress>
-        <Email suffix="@qq.com">sdakjfa@163.com</Email>
-    </UserInfo>
-    <LogInTime>2020.11.05 14:53:023</LogInTime>
-    <LogOutTime>2020.11.05 14:53:153</LogOutTime>
-</LogInfo>
+<LogRecords>
+    <LogInfo id="1">
+        <LogName>当年明月在</LogName>
+        <LogPwd>123456</LogPwd>
+        <UserInfo>
+            <UserName>张三</UserName>
+            <UserAge>26</UserAge>
+            <UserSex>男</UserSex>
+            <UserAddress>山东省济南市</UserAddress>
+            <Email suffix="@qq.com">sdakjfa@163.com</Email>
+            <UserName/>
+        </UserInfo>
+        <LogInTime>2020.11.05 14:53:023</LogInTime>
+        <LogOutTime>2020.11.05 14:53:153</LogOutTime>
+    </LogInfo>
+    <LogInfo id="2">
+        <LogName>曾照彩云归</LogName>
+        <LogPwd>123123</LogPwd>
+        <UserInfo>
+            <UserName>李四</UserName>
+            <UserAge>12</UserAge>
+            <UserSex>男</UserSex>
+            <UserAddress>山东省济南市</UserAddress>
+            <Email suffix="@qq.com">dsa@qq.com</Email>
+        </UserInfo>
+        <LogInTime>2020.11.06 14:53:023</LogInTime>
+        <LogOutTime>2020.11.06 14:53:153</LogOutTime>
+    </LogInfo>
+</LogRecords>

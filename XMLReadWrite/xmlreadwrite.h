@@ -12,21 +12,8 @@
 #include <QFile>
 #include <QMessageBox>
 
-struct LogInfo
-{
-    QString LogName;
-    QString LogPwd;
-    QString UserName;    
-    int UserAge;
-    QString UserSex;
-    QString UserAddress;
-    QString Email;
-    QString LogInTime;
-    QString LogOutTime;
-};
-
 /**
- * @brief The XMLReadWrite class xml读写，增删改查类，增删改查均缺少对异常值（不存在的值）的处理，缺少对单<>元素的处理
+ * @brief The XMLReadWrite class xml读写，增删改查类
  */
 class XMLReadWrite : public QObject
 {
@@ -34,6 +21,21 @@ class XMLReadWrite : public QObject
 public:
     explicit XMLReadWrite(QObject *parent = 0, QString fName="");
 
+    bool addRecordNode(QString nodeName, QString recordRootId);     //添加记录节点
+
+    //添加叶节点，因此需要知道其name、value、属性和父节点名称，及所在记录的id
+    bool addElementById(QString nodeName, QString nodeValue, QVector<QPair<QString, QString> >& attrs, QString refNodeName, QString recordRootId);
+
+    //添加非叶节点，需要知道其name、属性、父节点名称和所在记录的id即可
+    bool addSonNodeById(QString nodeName, QVector<QPair<QString, QString> >& attrs, QString refNodeName, QString recordRootId);
+
+    bool delRecordNode_complete(QString nodeName);     //删除整条记录节点
+
+    QString updateRecordNode_complete(QString nodeName);//修改整条记录节点,实际只是删除后新增，且新增在上层完成，本方法只负责删除记录后返回此条记录的id
+
+    bool findRecordNode_complete(QString nodeName);     //根据登录名查询整条记录节点
+
+    //=======================================以下为基本函数，组合使用可达到复杂功能（不含ID的情况下）======================================================================================
     QVector<QString> read();
 
     void write(QString fileName);
@@ -50,15 +52,15 @@ public:
 
     QDomNode findNode(QString nodeName);//通过节点名称查询节点，若知道节点属性名，也可获得属性值，但是无法显示所有属性的键值对
 
-    LogInfo& toLogInfo();
+    QDomNode lastNode();                //获取xml文件根节点下的最后一个节点，进而可获取其id，后续可用于添加节点时确定被添加节点的id
+
+    bool getDoc(QString fileName, QDomDocument& doc);       //打开xml文件，以QDomDocument形式保存其内容
+
+    bool saveChange(QDomDocument& doc, QFile& file);        //保存对xml文件的修改
 
 private:
-
     QString fileName;
 
-    QVector<QString> readInfo;      //在read()和toUserInfo()方法中使用
-
-    LogInfo logInfo;
 };
 
 #endif // XMLREADWRITE_H
