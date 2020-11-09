@@ -74,6 +74,11 @@ void MainWidget::updateInfo()
         return;
     XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
     QString recordId = xmlRW->updateRecordNode_complete(ui->LogNameL->text());
+    if(recordId.isEmpty())                          //修改的节点不存在
+    {
+        QMessageBox::information(this, "Failed", "Update failed");
+        return;
+    }
     fillInfo();
     bool flag=true;
     flag = flag && xmlRW->addRecordNode(nName->recordRootName, recordId);
@@ -99,10 +104,18 @@ void MainWidget::findInfo()
     if(!isFileSelected() || !checkInfo(1))           //未选择文件或者信息不完善，直接返回
         return;
     XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
-    if(xmlRW->findRecordNode_complete(ui->LogNameL->text()))
+    QDomNode node = xmlRW->findRecordNode_complete(ui->LogNameL->text());
+    if(!node.isNull())
+    {
+        QMap<QString, QString> info = xmlRW->parseNode(node);
+        pullInfo(info);
         QMessageBox::information(this, "Success", "Find success");
+    }
     else
+    {
+        infoClear();
         QMessageBox::information(this, "Failed", "Find failed");
+    }
     delete xmlRW;
 }
 
@@ -146,6 +159,31 @@ void MainWidget::fillInfo()
     logInfo.UserSex = ui->UserSexL->text();
     logInfo.UserAddress = ui->UserAddressL->text();
     logInfo.Email = ui->EmailL->text();
+}
+
+void MainWidget::pullInfo(QMap<QString, QString>& info)
+{
+    ui->LogNameL->setText(info.value(nName->LogName));
+    ui->LogPwdL->setText(info.value(nName->LogPwd));
+    ui->UserNameL->setText(info.value(nName->UserName));
+    ui->UserAgeL->setText(info.value(nName->UserAge));
+    ui->UserSexL->setText(info.value(nName->UserSex));
+    ui->UserAddressL->setText(info.value(nName->UserAddress));
+    ui->EmailL->setText(info.value(nName->Email));
+    ui->LogInTimeL->setText(info.value(nName->LogInTime));
+    ui->LogOutTimeL->setText(info.value(nName->LogOutTime));
+}
+
+void MainWidget::infoClear()
+{
+    ui->LogPwdL->clear();
+    ui->UserNameL->clear();
+    ui->UserAgeL->clear();
+    ui->UserSexL->clear();
+    ui->UserAddressL->clear();
+    ui->EmailL->clear();
+    ui->LogInTimeL->clear();
+    ui->LogOutTimeL->clear();
 }
 
 void MainWidget::on_SelectBtn_clicked()
@@ -410,20 +448,4 @@ void MainWidget::on_btnFindNode_clicked()
     else
         QMessageBox::information(this, "Failed", "Find failed");
     delete xmlRW;
-}
-
-Node::Node()
-{
-    docRootName = "LogRecords";
-    recordRootName = "LogInfo";
-    LogName = "LogName";
-    LogPwd = "LogPwd";
-    UserInfo = "UserInfo";
-    UserName = "UserName";
-    UserAge = "UserAge";
-    UserSex = "UserSex";
-    UserAddress = "UserAddress";
-    Email = "Email";
-    LogInTime = "LogInTime";
-    LogOutTime = "LogOutTime";
 }

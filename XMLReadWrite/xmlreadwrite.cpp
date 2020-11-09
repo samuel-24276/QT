@@ -1,5 +1,21 @@
 ﻿#include "xmlreadwrite.h"
 
+Node::Node()
+{
+    docRootName = "LogRecords";
+    recordRootName = "LogInfo";
+    LogName = "LogName";
+    LogPwd = "LogPwd";
+    UserInfo = "UserInfo";
+    UserName = "UserName";
+    UserAge = "UserAge";
+    UserSex = "UserSex";
+    UserAddress = "UserAddress";
+    Email = "Email";
+    LogInTime = "LogInTime";
+    LogOutTime = "LogOutTime";
+}
+
 XMLReadWrite::XMLReadWrite(QObject *parent, QString fName) : QObject(parent), fileName(fName)
 {
 
@@ -272,15 +288,15 @@ QString XMLReadWrite::updateRecordNode_complete(QString nodeName)
 {
     QDomDocument doc;
     if(!getDoc(fileName, doc))
-        return false;
+        return NULL;
     QDomElement root = doc.documentElement();
     if(root.isNull())
-        return false;
+        return NULL;
     QDomNode node = root.firstChild();
     while(node.firstChild().firstChild().nodeValue()!=nodeName)
     {
         if(node.nextSibling().isNull())     //欲更改的节点不存在
-            return false;
+            return NULL;
         node = node.nextSibling();
     }
     QString id = node.toElement().attribute("id");
@@ -288,22 +304,65 @@ QString XMLReadWrite::updateRecordNode_complete(QString nodeName)
     return id;
 }
 
-bool XMLReadWrite::findRecordNode_complete(QString nodeName)
+QDomNode XMLReadWrite::findRecordNode_complete(QString nodeName)
 {
+    QDomNode node;
     QDomDocument doc;
     if(!getDoc(fileName, doc))
-        return false;
+        return node;
     QDomElement root = doc.documentElement();
     if(root.isNull())
-        return false;
-    QDomNode node = root.firstChild();
+        return node;
+    node = root.firstChild();
     while(node.firstChild().firstChild().nodeValue()!=nodeName)
-    {
+    {        
         if(node.nextSibling().isNull())     //欲查询的节点不存在
-            return false;
+        {
+            return node.nextSibling();
+        }
         node = node.nextSibling();
     }
-    return true;
+    return node;
+}
+
+QMap<QString, QString> XMLReadWrite::parseNode(QDomNode& root)
+{
+    QMap<QString, QString> readInfo;
+    if(root.isNull())
+        return readInfo;
+
+    QDomNode node = root.firstChild();
+    while(node!=root)                       //当前节点不是根节点，循环进入子层
+    {
+        if(node.firstChild().isText())      //无孩子节点，包含nodeValue
+        {
+            readInfo.insert(node.nodeName(), node.firstChild().nodeValue());
+            while(node.parentNode()!=root && node.nextSibling().isNull())//兄弟节点为空，且父节点不是root，则循环返回到父节点
+            {
+                node = node.parentNode();
+            }
+            if(node.nextSibling().isNull())//父节点是root且无兄弟节点
+                break;
+            else
+                node = node.nextSibling();
+        }
+        else if(node.firstChild().isElement())   //有孩子节点，继续进入下一层
+        {
+            node = node.firstChild();
+        }
+        else if(node.firstChild().isNull())
+        {
+            while(node.parentNode()!=root && node.nextSibling().isNull())//兄弟节点为空，且父节点不是root，则循环返回到父节点
+            {
+                node = node.parentNode();
+            }
+            if(node.nextSibling().isNull())//父节点是root且无兄弟节点
+                break;
+            else
+                node = node.nextSibling();
+        }
+    }
+    return readInfo;
 }
 
 bool XMLReadWrite::addSonNode(QString nodeName, QString nodeValue, QString refNodeName, QVector<QPair<QString, QString> > &attrs)

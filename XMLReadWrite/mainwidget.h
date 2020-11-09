@@ -11,25 +11,6 @@ namespace Ui {
 class MainWidget;
 }
 
-class Node
-{
-public:
-    QString docRootName;
-    QString recordRootName;
-    QString LogName;
-    QString LogPwd;
-    QString UserInfo;
-    QString UserName;
-    QString UserAge;
-    QString UserSex;
-    QString UserAddress;
-    QString Email;
-    QString LogInTime;
-    QString LogOutTime;
-public:
-    Node();
-};
-
 struct LogInfo
 {
     QString id;
@@ -53,12 +34,15 @@ public:
     ~MainWidget();
 
 private:
-
     bool isFileSelected();
 
     bool checkInfo(int i=0);
 
-    void fillInfo();
+    void fillInfo();                    //将界面信息存入结构体中
+
+    void pullInfo(QMap<QString, QString>& info);//将节点信息取出显示到界面上
+
+    void infoClear();                   //清空除登录名之外的控件内容
 
 private slots:
 

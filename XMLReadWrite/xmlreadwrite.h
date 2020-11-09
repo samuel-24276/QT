@@ -12,6 +12,25 @@
 #include <QFile>
 #include <QMessageBox>
 
+class Node
+{
+public:
+    QString docRootName;
+    QString recordRootName;
+    QString LogName;
+    QString LogPwd;
+    QString UserInfo;
+    QString UserName;
+    QString UserAge;
+    QString UserSex;
+    QString UserAddress;
+    QString Email;
+    QString LogInTime;
+    QString LogOutTime;
+public:
+    Node();
+};
+
 /**
  * @brief The XMLReadWrite class xml读写，增删改查类
  */
@@ -23,17 +42,19 @@ public:
 
     bool addRecordNode(QString nodeName, QString recordRootId);     //添加记录节点
 
+    //添加非叶节点，需要知道其name、属性、父节点名称和所在记录的id即可
+    bool addSonNodeById(QString nodeName, QVector<QPair<QString, QString> >& attrs, QString refNodeName, QString recordRootId);    
+
     //添加叶节点，因此需要知道其name、value、属性和父节点名称，及所在记录的id
     bool addElementById(QString nodeName, QString nodeValue, QVector<QPair<QString, QString> >& attrs, QString refNodeName, QString recordRootId);
-
-    //添加非叶节点，需要知道其name、属性、父节点名称和所在记录的id即可
-    bool addSonNodeById(QString nodeName, QVector<QPair<QString, QString> >& attrs, QString refNodeName, QString recordRootId);
 
     bool delRecordNode_complete(QString nodeName);     //删除整条记录节点
 
     QString updateRecordNode_complete(QString nodeName);//修改整条记录节点,实际只是删除后新增，且新增在上层完成，本方法只负责删除记录后返回此条记录的id
 
-    bool findRecordNode_complete(QString nodeName);     //根据登录名查询整条记录节点
+    QDomNode findRecordNode_complete(QString nodeName);     //根据登录名查询整条记录节点
+
+    QMap<QString, QString> parseNode(QDomNode& root);         //读出某个节点root及其子节点的信息，存储到QMap中
 
     //=======================================以下为基本函数，组合使用可达到复杂功能（不含ID的情况下）======================================================================================
     QVector<QString> read();
