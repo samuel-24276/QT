@@ -1,20 +1,20 @@
 ﻿#include "xmlreadwrite.h"
 
-Node::Node()
-{
-    docRootName = "LogRecords";
-    recordRootName = "LogInfo";
-    LogName = "LogName";
-    LogPwd = "LogPwd";
-    UserInfo = "UserInfo";
-    UserName = "UserName";
-    UserAge = "UserAge";
-    UserSex = "UserSex";
-    UserAddress = "UserAddress";
-    Email = "Email";
-    LogInTime = "LogInTime";
-    LogOutTime = "LogOutTime";
-}
+//Node::Node()
+//{
+//    docRootName = "LogRecords";
+//    recordRootName = "LogInfo";
+//    LogName = "LogName";
+//    LogPwd = "LogPwd";
+//    UserInfo = "UserInfo";
+//    UserName = "UserName";
+//    UserAge = "UserAge";
+//    UserSex = "UserSex";
+//    UserAddress = "UserAddress";
+//    Email = "Email";
+//    LogInTime = "LogInTime";
+//    LogOutTime = "LogOutTime";
+//}
 
 XMLReadWrite::XMLReadWrite(QObject *parent, QString fName) : QObject(parent), fileName(fName)
 {
@@ -213,7 +213,6 @@ bool XMLReadWrite::addSonNodeById(QString nodeName, QVector<QPair<QString, QStri
         return false;
     if(root.isNull())
         return false;
-
     QDomNode node = root.firstChild();                      //给根节点以外的节点添加子节点
     while(node!=root)                                       //当前节点不是根节点，循环进入子层
     {
@@ -304,7 +303,7 @@ QString XMLReadWrite::updateRecordNode_complete(QString nodeName)
     return id;
 }
 
-QDomNode XMLReadWrite::findRecordNode_complete(QString nodeName)
+QDomNode XMLReadWrite::findRecordNode_complete(QString nodeValue)
 {
     QDomNode node;
     QDomDocument doc;
@@ -314,7 +313,7 @@ QDomNode XMLReadWrite::findRecordNode_complete(QString nodeName)
     if(root.isNull())
         return node;
     node = root.firstChild();
-    while(node.firstChild().firstChild().nodeValue()!=nodeName)
+    while(node.firstChild().firstChild().nodeValue()!=nodeValue)
     {        
         if(node.nextSibling().isNull())     //欲查询的节点不存在
         {
@@ -322,6 +321,8 @@ QDomNode XMLReadWrite::findRecordNode_complete(QString nodeName)
         }
         node = node.nextSibling();
     }
+    if(node.isNull())
+        qDebug()<<"Node Find";
     return node;
 }
 
@@ -656,12 +657,11 @@ QDomNode XMLReadWrite::findNode(QString nodeName)
     return nullNode;
 }
 
-QDomNode XMLReadWrite::lastNode()
+int XMLReadWrite::maxNodeId()
 {
-    QDomNode node;
     QFile file(fileName);
     if(!file.open(QIODevice::ReadOnly))
-        return node;
+        return -1;
     QDomDocument doc;
     QString errorMsg;
     int errorRow, errorColumn;
@@ -669,14 +669,24 @@ QDomNode XMLReadWrite::lastNode()
     {
         QMessageBox::warning(0, "warning", errorMsg+",Row:"+QString("%1").arg(errorRow)+",Column:"+QString("%1").arg(errorColumn));
         file.close();
-        return node;
+        return -2;
     }
     file.close();
 
     QDomElement root = doc.documentElement();
+    int id=0;
     if(root.isNull())
-        return node;
-    return root.lastChild();
+        return id;
+    QDomNode node = root.firstChild();
+    int nodeId;
+    while(!node.isNull())
+    {
+        nodeId = node.toElement().attribute("id").toInt();
+        if(id<nodeId)
+            id = nodeId;
+        node = node.nextSibling();
+    }
+    return nodeId;
 }
 
 bool XMLReadWrite::getDoc(QString fileName, QDomDocument& doc)

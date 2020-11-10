@@ -12,25 +12,6 @@
 #include <QFile>
 #include <QMessageBox>
 
-class Node
-{
-public:
-    QString docRootName;
-    QString recordRootName;
-    QString LogName;
-    QString LogPwd;
-    QString UserInfo;
-    QString UserName;
-    QString UserAge;
-    QString UserSex;
-    QString UserAddress;
-    QString Email;
-    QString LogInTime;
-    QString LogOutTime;
-public:
-    Node();
-};
-
 /**
  * @brief The XMLReadWrite class xml读写，增删改查类
  */
@@ -56,7 +37,15 @@ public:
 
     QMap<QString, QString> parseNode(QDomNode& root);         //读出某个节点root及其子节点的信息，存储到QMap中
 
-    //=======================================以下为基本函数，组合使用可达到复杂功能（不含ID的情况下）======================================================================================
+    int maxNodeId();                                    //获取xml文件根节点下所有节点id的最大值，可用于添加节点时确定被添加节点的id
+
+    bool getDoc(QString fileName, QDomDocument& doc);       //打开xml文件，以QDomDocument形式保存其内容
+
+    bool saveChange(QDomDocument& doc, QFile& file);        //保存对xml文件的修改
+
+
+
+    //=======================================以下为基本函数，组合使用可达到复杂功能（不含ID的情况下）===================================================================================
     QVector<QString> read();
 
     void write(QString fileName);
@@ -72,12 +61,6 @@ public:
     bool updateNode(QString oldNodeName, QString newValue, QVector<QPair<QString, QString> >& attrs);//修改节点名称为oldNodeName的节点值
 
     QDomNode findNode(QString nodeName);//通过节点名称查询节点，若知道节点属性名，也可获得属性值，但是无法显示所有属性的键值对
-
-    QDomNode lastNode();                //获取xml文件根节点下的最后一个节点，进而可获取其id，后续可用于添加节点时确定被添加节点的id
-
-    bool getDoc(QString fileName, QDomDocument& doc);       //打开xml文件，以QDomDocument形式保存其内容
-
-    bool saveChange(QDomDocument& doc, QFile& file);        //保存对xml文件的修改
 
 private:
     QString fileName;

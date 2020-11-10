@@ -1,6 +1,22 @@
 ﻿#include "mainwidget.h"
 #include "ui_mainwidget.h"
 
+Node::Node()
+{
+    docRootName = "LogRecords";
+    recordRootName = "LogInfo";
+    LogName = "LogName";
+    LogPwd = "LogPwd";
+    UserInfo = "UserInfo";
+    UserName = "UserName";
+    UserAge = "UserAge";
+    UserSex = "UserSex";
+    UserAddress = "UserAddress";
+    Email = "Email";
+    LogInTime = "LogInTime";
+    LogOutTime = "LogOutTime";
+}
+
 MainWidget::MainWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::MainWidget)
@@ -36,24 +52,30 @@ void MainWidget::addInfo()
         return;
     XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
     fillInfo();
-    QString recordId = QString("%1").arg(++recordNum);
-    bool flag=true;
-    flag = flag && xmlRW->addRecordNode(nName->recordRootName, recordId);
-    flag = flag && xmlRW->addElementById(nName->LogName, logInfo.LogName, attrs, nName->recordRootName, recordId);
-    flag = flag && xmlRW->addElementById(nName->LogPwd, logInfo.LogPwd, attrs, nName->recordRootName, recordId);
-    flag = flag && xmlRW->addSonNodeById(nName->UserInfo, attrs, nName->recordRootName, recordId);
-    flag = flag && xmlRW->addElementById(nName->UserName, logInfo.UserName, attrs, nName->UserInfo, recordId);
-    flag = flag && xmlRW->addElementById(nName->UserAge, logInfo.UserAge, attrs, nName->UserInfo, recordId);
-    flag = flag && xmlRW->addElementById(nName->UserSex, logInfo.UserSex, attrs, nName->UserInfo, recordId);
-    flag = flag && xmlRW->addElementById(nName->UserAddress, logInfo.UserAddress, attrs, nName->UserInfo, recordId);
-    flag = flag && xmlRW->addElementById(nName->Email, logInfo.Email, attrs, nName->UserInfo, recordId);
-    flag = flag && xmlRW->addElementById(nName->LogInTime, logInfo.LogInTime, attrs, nName->recordRootName, recordId);
-    flag = flag && xmlRW->addElementById(nName->LogOutTime, logInfo.LogOutTime, attrs, nName->recordRootName, recordId);
-    if(flag)
-        QMessageBox::information(this, "Success", "Add success");
-    else
-        QMessageBox::information(this, "Failed", "Add failed");
-    delete xmlRW;
+    QDomNode node = xmlRW->findRecordNode_complete(logInfo.LogName);
+    if(node.isNull())                               //未找到要添加的LogName
+    {
+        QString recordId = QString("%1").arg(xmlRW->maxNodeId()+1);
+        bool flag=true;
+        flag = flag && xmlRW->addRecordNode(nName->recordRootName, recordId);
+        flag = flag && xmlRW->addElementById(nName->LogName, logInfo.LogName, attrs, nName->recordRootName, recordId);
+        flag = flag && xmlRW->addElementById(nName->LogPwd, logInfo.LogPwd, attrs, nName->recordRootName, recordId);
+        flag = flag && xmlRW->addSonNodeById(nName->UserInfo, attrs, nName->recordRootName, recordId);
+        flag = flag && xmlRW->addElementById(nName->UserName, logInfo.UserName, attrs, nName->UserInfo, recordId);
+        flag = flag && xmlRW->addElementById(nName->UserAge, logInfo.UserAge, attrs, nName->UserInfo, recordId);
+        flag = flag && xmlRW->addElementById(nName->UserSex, logInfo.UserSex, attrs, nName->UserInfo, recordId);
+        flag = flag && xmlRW->addElementById(nName->UserAddress, logInfo.UserAddress, attrs, nName->UserInfo, recordId);
+        flag = flag && xmlRW->addElementById(nName->Email, logInfo.Email, attrs, nName->UserInfo, recordId);
+        flag = flag && xmlRW->addElementById(nName->LogInTime, logInfo.LogInTime, attrs, nName->recordRootName, recordId);
+        flag = flag && xmlRW->addElementById(nName->LogOutTime, logInfo.LogOutTime, attrs, nName->recordRootName, recordId);
+        if(flag)
+            QMessageBox::information(this, "Success", "Add success");
+        else
+            QMessageBox::information(this, "Failed", "Add failed");
+        delete xmlRW;
+    }
+    else                                            //LogName已存在
+        QMessageBox::information(this, "Failed", "LogName already exists");
 }
 
 void MainWidget::delInfo()
@@ -188,7 +210,7 @@ void MainWidget::infoClear()
 
 void MainWidget::on_SelectBtn_clicked()
 {
-    fileName = QFileDialog::getOpenFileName();
+    fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr("xml file (*.xml);;other file(*.*)"));
     if(fileName.isEmpty())
     {
         QMessageBox::warning(this, "warning", "You haven't select file");
@@ -196,7 +218,6 @@ void MainWidget::on_SelectBtn_clicked()
     }
     ui->PathL->setText(fileName);
     XMLReadWrite* xmlRW = new XMLReadWrite(this, fileName);
-    recordNum = xmlRW->lastNode().toElement().attribute("id").toInt();
     delete xmlRW;
 }
 
@@ -248,7 +269,7 @@ void MainWidget::on_btnAddSon_clicked()
     for(int i=0; i<size; ++i)
     {
         item1 = ui->tableWidget->item(i, 0);
-        item2 = ui->tableWidget->item(i,1);
+        item2 = ui->tableWidget->item(i, 1);
         if(item1==nullptr || item2==nullptr)                    //单元格未点击
             continue;
         if(item1->text().isEmpty() || item2->text().isEmpty())  //单元格点击后未输入
